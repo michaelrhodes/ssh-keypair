@@ -1,8 +1,8 @@
 var fs = require('fs')
 var path = require('path')
 var test = require('tape')
-var series = require('run-series')
 var keypair = require('../')
+
 var ssh = path.join(__dirname, '.ssh')
 
 var somehost = {
