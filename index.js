@@ -40,7 +40,7 @@ function keypair (host, opts, cb) {
   }
 
   function write (block, enc, next) {
-    if (match && match !== '*') {
+    if (match && match.Host && !/\*/.test(match.Host)) {
       return next()
     }
 
@@ -50,6 +50,13 @@ function keypair (host, opts, cb) {
     }
 
     if (wildcard(block.Host, host)) {
+      if (!match || !match.Host || block.Host.length > match.Host.length) {
+        match = block
+        return next()
+      }
+    }
+
+    if (!block.Host) {
       match = block
     }
 
