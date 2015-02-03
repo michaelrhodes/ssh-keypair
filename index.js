@@ -50,13 +50,15 @@ function keypair (host, opts, cb) {
     }
 
     if (wildcard(block.Host, host)) {
-      if (!match || !match.Host || block.Host.length > match.Host.length) {
+      var noHost = !match || !match.Host
+      var closerHost = block.Host.length > match.Host.length
+      if (noHost || closerHost) {
         match = block
         return next()
       }
     }
 
-    if (!block.Host) {
+    if (!match && !block.Host) {
       match = block
     }
 
