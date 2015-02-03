@@ -9,12 +9,13 @@
   "dependencies": {
     "glob": "^4.3.5",
     "run-parallel": "^1.0.0",
+    "sshconf": "^1.0.1",
     "stream-splicer": "^1.3.1",
     "through2": "^0.6.3",
     "through2-filter": "^1.4.1",
     "untildify": "^1.0.0",
     "user-home": "^1.1.1",
-    "sshconf": "^1.0.1"
+    "wildcard": "^1.1.0"
   },
   "devDependencies": {},
   "scripts": {

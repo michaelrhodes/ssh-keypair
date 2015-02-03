@@ -6,13 +6,14 @@ var filter = require('through2-filter')
 var splice = require('stream-splicer')
 var parallel = require('run-parallel')
 var untilde = require('untildify')
+var wildcard = require('wildcard')
 var home = require('user-home')
 var parse = require('sshconf/parse')
 
 function keypair (host, opts, cb) {
   if (typeof host == 'function') {
     cb = host
-    opts = { fallback: true }
+    opts = {}
     host = '*'
   }
 
@@ -21,67 +22,44 @@ function keypair (host, opts, cb) {
     opts = {}
   }
 
-  var ssh = opts.ssh || path.join(home, '.ssh')
+  var ssh = opts.dir || path.join(home, '.ssh')
   var config = path.join(ssh, 'config')
 
   var match = null
   var stream = splice([
     fs.createReadStream(config),
-    parse()
+    parse(),
+    filter.obj(valid),
+    through.obj(write, end)
   ])
 
-  if (host) {
-    stream.push(filter.obj(hosts))
-  }
-
-  stream.push(through.obj(write, end))
   stream.on('error', cb)
 
-  function hosts (block) {
-    var isValidHostBlock = (
-      block.Host === host ||
-      block.Host === '*'
-    )
-    var isGlobalIdentityFile = (
-      !block.Host &&
-      !!block.IdentityFile
-    )
-    return (
-      isValidHostBlock ||
-      isGlobalIdentityFile
-    )
+  function valid (block) {
+    return !!block.IdentityFile
   }
 
   function write (block, enc, next) {
-    if (!match || block.Host === host)
+    if (match && match !== '*') {
+      return next()
+    }
+
+    if (block.Host === host) {
       match = block
+      return next()
+    }
+
+    if (wildcard(block.Host, host)) {
+      match = block
+    }
+
     next()
   }
 
   function end () {
-    if (!match && !opts.fallback) {
-      cb(null, {})
-      return
-    }
-
-    if (match) {
-      handle(path.resolve(ssh, untilde(match.IdentityFile)))
-      return
-    }
-
-    var id_rsa = path.join(ssh, 'id_rsa')
-    var id_dsa = path.join(ssh, 'id_dsa')
-
-    parallel([
-      exists(id_rsa),
-      exists(id_dsa)
-    ],
-    function (err, results) {
-      results = [].concat(results)
-      results[0] ? handle(id_rsa) :
-      results[1] ? handle(id_dsa) :
-      cb(null, {})
-    })
+    if (!match) return cb(null, {})
+    var identity = untilde(match.IdentityFile)
+    handle(path.resolve(ssh, identity))
   }
 
   function handle (identity) {
@@ -97,14 +75,6 @@ function keypair (host, opts, cb) {
           public: keys[1]
         })
       })
-    })
-  }
-}
-
-function exists (file) {
-  return function (cb) {
-    fs.exists(file, function(exists) {
-      cb(null, exists)
     })
   }
 }
