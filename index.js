@@ -85,16 +85,20 @@ function keypair (host, opts, cb) {
   }
 
   function handle (identity) {
-    var pattern = identity + '*(.pub|.pem)'
+    var keys = {}
+    var pattern = identity + '@(.pub|.pem)'
 
-    glob(pattern, function (err, files) {
+    read(identity)(function (err, key) {
       if (err) return cb(err)
+      keys.private = key 
 
-      parallel(files.map(read), function (err, keys) {
-        err ? cb(err) :
-        cb(null, {
-          private: keys[0],
-          public: keys[1]
+      glob(pattern, function (err, files) {
+        if (err) return cb(err)
+
+        parallel(files.map(read), function (err, pub) {
+          if (err) return cb(err)
+          keys.public = pub[0]
+          cb(null, keys)
         })
       })
     })
