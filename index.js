@@ -44,25 +44,35 @@ function keypair (host, opts, cb) {
       return next()
     }
 
-    if (block.Host === host) {
+    if (!match && !block.Host) {
       match = block
       return next()
     }
 
-    if (wildcard(block.Host, host)) {
-      var noHost = !match || !match.Host
-      var closerHost = (
-        match && match.Host &&
-        block.Host.length > match.Host.length
-      )
-      if (noHost || closerHost) {
-        match = block
-        return next()
-      }
+    if (~block.Host.indexOf(host)) {
+      match = block
+      match.Host = host
+      return next()
     }
 
-    if (!match && !block.Host) {
-      match = block
+    var i = 0
+    var l = block.Host.length
+    var blockHost
+
+    for (; i < l; i++) {
+      blockHost = block.Host[i]
+      if (wildcard(blockHost, host)) {
+        var noHost = !match || !match.Host
+        var closerHost = (
+          match && match.Host &&
+          blockHost.length > match.Host.length
+        )
+        if (noHost || closerHost) {
+          match = block
+          match.Host = blockHost
+          return next()
+        }
+      }
     }
 
     next()
