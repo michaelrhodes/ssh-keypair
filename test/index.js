@@ -38,11 +38,14 @@ test('it finds keypairs for hosts', function (assert) {
 })
 
 test('it finds keypairs for hosts with wildcards', function (assert) {
-  assert.plan(4)
+  assert.plan(5)
   keypair('sub.domain.com', { dir: ssh }, function (err, key) {
     assert.deepEqual(key, subdomain)
   })
   keypair('another.domain.com', { dir: ssh }, function (err, key) {
+    assert.deepEqual(key, id_rsa)
+  })
+  keypair('explicit.xxx', { dir: ssh }, function (err, key) {
     assert.deepEqual(key, id_rsa)
   })
   keypair('any.bike', { dir: ssh }, function (err, key) {
